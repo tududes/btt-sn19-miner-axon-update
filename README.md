@@ -1,6 +1,6 @@
 # Update miner axon ip on chain in a cron job
 
-This script automatically updates your SN19 miner's axon IP address on the Bittensor network. It's useful when your IP changes or if you need to maintain your miner's registration with the correct IP.
+This script automatically updates your SN19 miner's axon IP address on the Bittensor network. It's useful when your IP changes or if you need to maintain your miner's registration with the correct IP. The script uses the Fiber API for improved compatibility and dependency management.
 
 ### Install dependencies
 ```bash
@@ -35,6 +35,25 @@ echo "NINETEEN_REPO_DIRECTORY=$NINETEEN_REPO_DIRECTORY" >> .env
 nano .env
 ```
 
+### Set up the test environment (optional)
+The repository includes a `.env.test` file that is used when running the script in test mode. You can modify this file to test with your specific network settings:
+
+```bash
+# Edit the test environment file if needed
+nano .env.test
+```
+
+Default test settings:
+```
+NINETEEN_REPO_DIRECTORY=./test_dir
+HOTKEY_NAME=test_hotkey
+WALLET_NAME=test_wallet
+SUBTENSOR_NETWORK=finney
+SUBTENSOR_ADDRESS=wss://entrypoint-finney.opentensor.ai:443
+NODE_PORT=8091
+NETUID=19
+```
+
 
 ### Required variables in your nineteen repo's .env files
 Each miner configuration file in your nineteen repo folder must have the following variables:
@@ -43,7 +62,7 @@ Each miner configuration file in your nineteen repo folder must have the followi
 HOTKEY_NAME          # The name of your hotkey
 WALLET_NAME          # The name of your wallet 
 SUBTENSOR_NETWORK    # Network name (e.g., finney, local)
-SUBTENSOR_ADDRESS    # Subtensor endpoint (e.g., ws://127.0.0.1:9944)
+SUBTENSOR_ADDRESS    # Subtensor endpoint (e.g., wss://entrypoint-finney.opentensor.ai:443)
 NODE_PORT            # The port your node is running on
 NETUID               # The subnet ID (e.g., 19)
 ```
@@ -65,12 +84,31 @@ chmod +x $HOME/btt-sn19-miner-axon-update/update_miner_axon_on_chain.sh
 ```
 
 
-### Run the script once to test
+### Testing the script
+The script includes a test mode that allows you to verify it can successfully connect to the Bittensor network and retrieve metagraph data:
+
 ```bash
-bash $HOME/btt-sn19-miner-axon-update/update_miner_axon_on_chain.sh
+# Run in test mode
+./update_miner_axon_on_chain.sh --test
 ```
 
-### If the script runs successfully, you can now set up a cron job to run it every 15 minutes
+This will:
+- Connect to the network specified in your `.env.test` file
+- Retrieve the metagraph for the specified subnet
+- Display the first few nodes' information (UID, Hotkey, Axon IP)
+- Verify that everything is working correctly without modifying any data on the chain
+
+
+### Running the script
+After testing, you can run the script normally:
+
+```bash
+./update_miner_axon_on_chain.sh
+```
+
+### Setting up a cron job
+If the script runs successfully, you can set up a cron job to run it every 15 minutes:
+
 ```bash
 # Append to the crontab:
 (crontab -l; echo "*/15 * * * * $HOME/btt-sn19-miner-axon-update/update_miner_axon_on_chain.sh") | crontab -
@@ -81,10 +119,17 @@ bash $HOME/btt-sn19-miner-axon-update/update_miner_axon_on_chain.sh
 The script will:
 1. Find all `.env` files in your nineteen repo directory
 2. Load wallet and hotkey information for each miner
-3. Check the current IP:PORT registration on the chain
+3. Check the current IP:PORT registration on the chain using Fiber
 4. Update the IP:PORT if it differs from your current external IP (using the NODE_PORT from your env file)
-5. The script uses the Fiber API directly to update the IP on the chain without relying on external commands
-6. Provide a summary of total hotkeys processed and updated
+5. Provide a summary of total hotkeys processed and updated
+
+
+### Technical details
+- The script uses only the Fiber API (no bittensor package) to avoid dependency conflicts
+- Only essential data is retrieved from the metagraph (UID, AXON_IP, HOTKEY) for efficiency
+- IP addresses are properly handled, including conversion from integer format
+- Improved error handling and reporting throughout the process
+- Test mode allows easy verification of connectivity and data retrieval
 
 
 ### Troubleshooting
@@ -95,6 +140,8 @@ If the script fails to update your IP on the chain, verify:
 4. All required environment variables are set correctly
 5. Your internet connection is stable
 6. Both hot and cold keys are set up correctly in your wallet
+
+For more detailed diagnostics, run the script in test mode with `--test` flag.
 
 
 ### If you need to cleanup and reinstall packages:
