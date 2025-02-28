@@ -14,7 +14,7 @@ sudo apt install -y python3.11 python3.11-venv
 ### Clone the repo and set things up
 ```bash
 cd $HOME
-git clone https://github.com/sirouk/btt-sn19-miner-axon-update
+git clone https://github.com/tududes/btt-sn19-miner-axon-update
 cd ./btt-sn19-miner-axon-update
 
 python3.11 -m venv .venv
