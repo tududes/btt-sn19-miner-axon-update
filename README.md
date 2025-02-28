@@ -59,7 +59,7 @@ cat .*.env | grep -E 'HOTKEY_NAME|WALLET_NAME|SUBTENSOR_NETWORK|SUBTENSOR_ADDRES
 ```
 
 
-### Make sure the script executable
+### Make the script executable
 ```bash
 chmod +x $HOME/btt-sn19-miner-axon-update/update_miner_axon_on_chain.sh
 ```
@@ -83,7 +83,8 @@ The script will:
 2. Load wallet and hotkey information for each miner
 3. Check the current IP:PORT registration on the chain
 4. Update the IP:PORT if it differs from your current external IP (using the NODE_PORT from your env file)
-5. Provide a summary of total hotkeys processed and updated
+5. The script uses the Fiber API directly to update the IP on the chain without relying on external commands
+6. Provide a summary of total hotkeys processed and updated
 
 
 ### Troubleshooting
@@ -93,11 +94,12 @@ If the script fails to update your IP on the chain, verify:
 3. You have the proper permissions to access the nineteen repo directory
 4. All required environment variables are set correctly
 5. Your internet connection is stable
+6. Both hot and cold keys are set up correctly in your wallet
 
 
 ### If you need to cleanup and reinstall packages:
 ```bash
 cd $HOME/btt-sn19-miner-axon-update
-deactivate;
+deactivate
 rm -rf .venv
 ```

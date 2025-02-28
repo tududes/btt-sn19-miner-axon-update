@@ -7,6 +7,9 @@ from substrateinterface import Keypair # pip install substrate-interface
 import subprocess
 import requests
 from dotenv import load_dotenv, dotenv_values
+import asyncio
+from fiber.chain import chain_utils, interface, metagraph, post_ip_to_chain, weights
+from fiber.chain.fetch_nodes import get_nodes_for_netuid
 
 
 load_dotenv()
@@ -127,52 +130,34 @@ for filename in os.listdir(NINETEEN_REPO_DIRECTORY):
                 print(f"Hotkey: {hotkey} updating metagraph from {axon_ip_port} to {NODE_EXTERNAL_IP}:{axon_port}")
                 #quit() # for testing
 
-
-                ### USING BITTENSOR (BROKEN):
-                # try:
-                # if not subtensor:
-                #    subtensor = bittensor.subtensor(network=f"{SUBTENSOR_ADDRESS}")
-                # wallet = bittensor.wallet(name=WALLET_NAME,hotkey=HOTKEY_NAME)
-                
-                # serve = bittensor.core.extrinsics.serving.serve_extrinsic(
-                #    subtensor=subtensor,
-                #    wallet=wallet,
-                #    ip=NODE_EXTERNAL_IP,
-                #    port=str(axon_port),
-                #    protocol=4,
-                #         netuid=int(NETUID) if NETUID is not None else 0
-                #     )
-                #     print(serve)
-                # except Exception as e:
-                #     print(f"Error updating IP and port on chain for {hotkey}: {e}")
-
-
-                ### USING FIBER (WORKING)
-                # Construct the command
-                fiber_post_ip_path = os.path.join(NINETEEN_REPO_DIRECTORY, '.venv', 'bin', 'fiber-post-ip')
-
-                command = [
-                    fiber_post_ip_path,
-                    '--netuid', NETUID,
-                    '--subtensor.network', SUBTENSOR_NETWORK,
-                    '--subtensor.chain_endpoint', SUBTENSOR_ADDRESS,
-                    '--external_port', axon_port,
-                    '--wallet.name', WALLET_NAME,
-                    '--wallet.hotkey', HOTKEY_NAME,
-                    '--external_ip', NODE_EXTERNAL_IP
-                ]
-
-                # Run the command
+                ### USING FIBER API DIRECTLY
                 try:
-                    print(f"Running command: {' '.join(command)}")
-                    result = subprocess.run(command, cwd=NINETEEN_REPO_DIRECTORY, capture_output=True, text=True)
-                    if result.returncode == 0:
+                    print(f"Updating IP using fiber API for hotkey: {hotkey}")
+                    
+                    # Create substrate connection
+                    substrate = interface.get_substrate(
+                        subtensor_address=SUBTENSOR_ADDRESS, 
+                        subtensor_network=SUBTENSOR_NETWORK
+                    )
+                    
+                    # Load coldkey public key
+                    coldkey_keypair_pub = chain_utils.load_coldkeypub_keypair(wallet_name=WALLET_NAME)
+                    
+                    # Post the IP to the chain
+                    success = post_ip_to_chain.post_node_ip_to_chain(
+                        substrate=substrate,
+                        keypair=keypair,
+                        netuid=int(NETUID),
+                        external_ip=NODE_EXTERNAL_IP,
+                        external_port=int(axon_port),
+                        coldkey_ss58_address=coldkey_keypair_pub.ss58_address,
+                    )
+                    
+                    if success:
                         print(f"Successfully updated IP and port on chain for {hotkey}")
                         count_updated += 1
                     else:
-                        print(f"Error updating IP and port on chain for {hotkey}")
-                        print(f"Stdout: {result.stdout}")
-                        print(f"Stderr: {result.stderr}")
+                        print(f"Failed to update IP and port on chain for {hotkey}")
                 except Exception as e:
                     print(f"Exception occurred while updating IP and port on chain for {hotkey}: {e}")
             else:
