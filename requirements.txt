@@ -1,0 +1,7 @@
+ujson
+pandas
+requests
+bittensor==9.0.0
+substrate-interface
+python-dotenv==1.0.1
+fiber @ git+https://github.com/rayonlabs/fiber.git
